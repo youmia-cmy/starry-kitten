@@ -333,7 +333,16 @@
       'sb_sample_1': '\u5931\u5FC6\u673A\u5668\u4EBA',
       'sb_sample_2': '\u661F\u9645\u65C5\u884C\u8005',
       'sb_sample_date_1': '3\u670828\u65E5',
-      'sb_sample_date_2': '3\u670825\u65E5'
+      'sb_sample_date_2': '3\u670825\u65E5',
+      'dc_download': '\u2B07 \u4E0B\u8F7D\u56FE\u7247',
+      'sb_copy_all': '\uD83D\uDCCB \u590D\u5236\u5168\u90E8\u5185\u5BB9',
+      'sb_label_scene': '\u573A\u666F',
+      'sb_label_dialogue': '\u5BF9\u8BDD',
+      'sb_label_emotion': '\u60C5\u7EEA',
+      'sb_label_pace': '\u8282\u594F',
+      'toast_copied': '\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F',
+      'toast_copy_fail': '\u590D\u5236\u5931\u8D25',
+      'fm_years_later': '\u5E74\u540E'
     },
     en: {
       // Page titles
@@ -564,7 +573,16 @@
       'sb_sample_1': 'Amnesiac Robot',
       'sb_sample_2': 'Interstellar Traveler',
       'sb_sample_date_1': 'Mar 28',
-      'sb_sample_date_2': 'Mar 25'
+      'sb_sample_date_2': 'Mar 25',
+      'dc_download': '\u2B07 Download Image',
+      'sb_copy_all': '\uD83D\uDCCB Copy All Content',
+      'sb_label_scene': 'Scene',
+      'sb_label_dialogue': 'Dialogue',
+      'sb_label_emotion': 'Emotion',
+      'sb_label_pace': 'Pace',
+      'toast_copied': 'Copied to clipboard',
+      'toast_copy_fail': 'Copy failed',
+      'fm_years_later': 'Years Later'
     }
   };
 
