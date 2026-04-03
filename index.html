@@ -687,6 +687,71 @@ button:disabled::after {
   font-size: 1rem; padding: 12px 36px; margin-top: 10px;
 }
 
+/* === DOWNLOAD BUTTON (DreamCanvas) === */
+.dc-download-btn {
+  display: none;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--star-cyan), var(--star-purple));
+  color: var(--void);
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-cn);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 16px rgba(0,229,255,0.15);
+}
+.dc-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 24px rgba(0,229,255,0.3);
+}
+
+/* === COPY ALL BUTTON (Storyboard) === */
+.sb-copy-btn {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 10px 28px;
+  background: linear-gradient(135deg, var(--star-pink), var(--star-purple));
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 16px rgba(255,107,157,0.15);
+}
+.sb-copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 24px rgba(255,107,157,0.3);
+}
+
+/* === FUTURE ME YEAR SECTIONS === */
+.fm-year-section {
+  margin-bottom: 24px;
+}
+.fm-year-section-header {
+  display: inline-block;
+  padding: 6px 18px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(157,78,221,0.15));
+  border: 1px solid rgba(0,229,255,0.25);
+  border-radius: 20px;
+  color: var(--star-cyan);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.fm-year-node.has-result .fm-year-dot {
+  background: var(--star-cyan);
+  box-shadow: 0 0 12px var(--star-cyan);
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 900px) {
   .dreamcanvas-layout, .sb-layout, .fm-layout { grid-template-columns: 1fr; }
@@ -1208,12 +1273,11 @@ auth.onAuthStateChanged(async user => {
     const vipDetailText = isVip ? (vipLabelMap[vipLevel] || t('profile_vip_user')) : '';
     const expiryText = isVip && vipExpiry ? t('profile_expiry') + vipExpiry.toLocaleDateString(getCurrentLang() === 'zh' ? 'zh-CN' : 'en-US') : '';
 
-    info.innerHTML = `<div class="user-avatar" id="avatarBtn">${initial}</div><span class="user-email">${displayName}</span>`;
+    info.innerHTML = `<span class="user-email" id="avatarBtn" style="cursor:pointer;">${displayName}</span>`;
 
     const popup = document.createElement('div');
     popup.id = 'profilePopup'; popup.className = 'profile-popup';
     popup.innerHTML = `
-      <div class="profile-popup-avatar">${initial}</div>
       <div class="profile-popup-name">${displayName}</div>
       <div class="profile-popup-vip">
         <span class="vip-badge ${vipBadgeClass}">${vipText}</span>
@@ -1328,9 +1392,29 @@ document.querySelector('.dc-generate-btn').addEventListener('click', async () =>
       `Generate a high-quality image based on this description: ${optimizedPrompt}. Style: ${style || 'dreamlike'}. Make it visually stunning and artistic.`
     );
     if (result.imageData) {
-      preview.innerHTML = `<img src="data:${result.imageData.mimeType};base64,${result.imageData.data}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;" />`;
+      const imgSrc = `data:${result.imageData.mimeType};base64,${result.imageData.data}`;
+      preview.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;" />`;
+      // Add download button outside the preview area
+      let dlBtn = preview.parentElement.querySelector('.dc-download-btn');
+      if (!dlBtn) {
+        dlBtn = document.createElement('button');
+        dlBtn.className = 'dc-download-btn';
+        preview.parentElement.insertBefore(dlBtn, preview.nextSibling);
+      }
+      dlBtn.textContent = t('dc_download');
+      dlBtn.style.display = 'inline-block';
+      dlBtn.onclick = function() {
+        var a = document.createElement('a');
+        a.href = imgSrc;
+        a.download = 'dreamcanvas-' + Date.now() + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
     } else {
       preview.innerHTML = `<div style="padding:20px;text-align:center;"><div class="dc-preview-icon">✦</div><div class="dc-preview-text" style="margin-top:12px;">${result.textData || t('dc_no_image_data')}</div></div>`;
+      var hideDlBtn = preview.parentElement.querySelector('.dc-download-btn');
+      if (hideDlBtn) hideDlBtn.style.display = 'none';
     }
     showToast(t('toast_creation_done'));
     // Save to Firestore (non-blocking)
@@ -1342,6 +1426,8 @@ document.querySelector('.dc-generate-btn').addEventListener('click', async () =>
   } catch(e) {
     showToast(t('toast_generate_fail') + e.message, 'error');
     preview.innerHTML = `<div class="shimmer"></div><div class="dc-preview-icon">✦</div><div class="dc-preview-text">${t('toast_generate_fail_retry')}</div>`;
+    var hideDlBtn = preview.parentElement.querySelector('.dc-download-btn');
+    if (hideDlBtn) hideDlBtn.style.display = 'none';
   } finally {
     btn.disabled = false; btn.textContent = t('dc_generate');
   }
@@ -1406,6 +1492,27 @@ ${wantImagePrompts ? '同时为每帧生成一段详细的图像生成 prompt (i
         ${f.imagePrompt ? `<div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;">Image Prompt: ${f.imagePrompt}</div>` : ''}
       </div>`;
     });
+    // Add copy-all button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'sb-copy-btn';
+    copyBtn.textContent = t('sb_copy_all');
+    copyBtn.addEventListener('click', () => {
+      let allText = '';
+      frames.forEach(f => {
+        allText += `FRAME ${String(f.num).padStart(2,'0')}\n`;
+        if (f.scene) allText += `${t('sb_label_scene')}: ${f.scene}\n`;
+        if (f.dialogue) allText += `${t('sb_label_dialogue')}: ${f.dialogue}\n`;
+        if (f.emotion) allText += `${t('sb_label_emotion')}: ${f.emotion}\n`;
+        if (f.pace) allText += `${t('sb_label_pace')}: ${f.pace}\n`;
+        allText += '\n';
+      });
+      navigator.clipboard.writeText(allText.trim()).then(() => {
+        showToast(t('toast_copied'));
+      }).catch(() => {
+        showToast(t('toast_copy_fail'), 'error');
+      });
+    });
+    timeline.appendChild(copyBtn);
     showToast(t('toast_sb_done'));
     // Save to Firestore (non-blocking)
     db.collection('users').doc(currentUser.uid).collection('storyboards').add({
@@ -1477,69 +1584,104 @@ document.querySelector('.fm-simulate-btn').addEventListener('click', async () =>
       });
     }
   } catch(e) {}
-  // Get selected year
+  // Get selected year and determine cascading years
   const activeYear = document.querySelector('.fm-year-node.active .fm-year-label');
   const yearLabel = activeYear ? activeYear.textContent : '1 年后';
   const yearNum = parseInt(yearLabel) || 1;
+  const yearCascadeMap = {1: [1], 5: [1,5], 10: [1,5,10], 20: [1,5,10,20]};
+  const cascadeYears = yearCascadeMap[yearNum] || [yearNum];
   try {
     const isEn = getCurrentLang() === 'en';
+    const yearsListStr = cascadeYears.join(', ');
     const systemPrompt = isEn
-      ? `You are an AI life simulator and strategic advisor with deep life experience. Based on the user's current situation and choices, simulate possible outcomes of different life paths after ${yearNum} year(s).
-Output strict JSON format (no markdown code block tags), containing analysis across 4 dimensions:
-[
-  {"title":"Career Development","text":"Path A: ... Path B: ..."},
-  {"title":"Financial Status","text":"Path A: ... Path B: ..."},
-  {"title":"Quality of Life","text":"Path A: ... Path B: ..."},
-  {"title":"Practical Advice","text":"Comprehensive advice..."}
-]
-Each text field 80-120 words, content should be specific, data-oriented, and insightful. If there are historical records, reference them and maintain consistency.`
-      : `你是一位拥有深厚人生阅历的 AI 人生模拟师和战略顾问。你需要根据用户的当前状况和面临的选择，模拟不同人生路径在 ${yearNum} 年后的可能结果。
-输出严格 JSON 格式（不要 markdown 代码块标记），包含4个维度的分析：
-[
-  {"title":"职业发展","text":"路径A：...。路径B：..."},
-  {"title":"财务状况","text":"路径A：...。路径B：..."},
-  {"title":"生活质量","text":"路径A：...。路径B：..."},
-  {"title":"实用建议","text":"综合建议..."}
-]
-每个 text 字段 80-120 字，内容要具体、有数据感、有洞察力。如果有历史记录，请参考并保持建议的一致性和连续性。`;
+      ? `You are an AI life simulator and strategic advisor with deep life experience. Based on the user's current situation and choices, simulate possible outcomes of different life paths at multiple time horizons: ${yearsListStr} year(s).
+Each time horizon must logically build on the previous one — results should be progressive and coherent (e.g., 5-year results should evolve naturally from the 1-year situation).
+Output strict JSON format (no markdown code block tags). The top-level structure is an object with year keys, each containing an array of 4 dimension cards:
+{
+  ${cascadeYears.map(y => `"${y}": [
+    {"title":"Career Development","text":"Path A: ... Path B: ..."},
+    {"title":"Financial Status","text":"Path A: ... Path B: ..."},
+    {"title":"Quality of Life","text":"Path A: ... Path B: ..."},
+    {"title":"Practical Advice","text":"Comprehensive advice..."}
+  ]`).join(',\n  ')}
+}
+Each text field 80-120 words, content should be specific, data-oriented, and insightful. Later years must reference and build upon earlier years logically. If there are historical records, reference them and maintain consistency.`
+      : `你是一位拥有深厚人生阅历的 AI 人生模拟师和战略顾问。你需要根据用户的当前状况和面临的选择，模拟不同人生路径在多个时间节点的可能结果：${yearsListStr} 年后。
+每个时间节点的结果必须在前一个时间节点的基础上逻辑递进——结果应当连贯一致（例如5年后的情况应该自然地从1年后的状况演变而来）。
+输出严格 JSON 格式（不要 markdown 代码块标记）。顶层结构为以年份为键的对象，每个年份包含4个维度的分析数组：
+{
+  ${cascadeYears.map(y => `"${y}": [
+    {"title":"职业发展","text":"路径A：...。路径B：..."},
+    {"title":"财务状况","text":"路径A：...。路径B：..."},
+    {"title":"生活质量","text":"路径A：...。路径B：..."},
+    {"title":"实用建议","text":"综合建议..."}
+  ]`).join(',\n  ')}
+}
+每个 text 字段 80-120 字，内容要具体、有数据感、有洞察力。后面的年份必须逻辑递进地引用前面年份的结果。如果有历史记录，请参考并保持建议的一致性和连续性。`;
 
     const userPrompt = isEn
       ? `【Current Identity】${identity || 'Not provided'}
 【Current Situation】${situation || 'Not provided'}
 【Choices Facing】${choices || 'Not provided'}
-【Simulation Period】${yearNum} year(s) later${previousContext}
+【Simulation Period】${yearsListStr} year(s) later (progressive)${previousContext}
 
-Please simulate this person's life situation across different choice paths after ${yearNum} year(s).`
+Please simulate this person's life situation across different choice paths at each time horizon: ${yearsListStr} year(s). Each subsequent time period must logically build on the previous.`
       : `【当前身份】${identity || '未提供'}
 【当前状况】${situation || '未提供'}
 【面临选择】${choices || '未提供'}
-【模拟时间】${yearNum} 年后${previousContext}
+【模拟时间】${yearsListStr} 年后（逐步递进）${previousContext}
 
-请模拟这个人在 ${yearNum} 年后不同选择路径下的人生状况。`;
+请模拟这个人在各个时间节点（${yearsListStr} 年后）不同选择路径下的人生状况。每个后续时间段必须在前一个的基础上逻辑递进。`;
 
     const result = await callGemini(GEMINI_PRO, userPrompt, systemPrompt);
-    let reports;
+    let reportsObj;
     try {
       const jsonStr = result.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-      reports = JSON.parse(jsonStr);
+      reportsObj = JSON.parse(jsonStr);
     } catch(pe) {
-      const match = result.match(/\[[\s\S]*\]/);
-      if (match) reports = JSON.parse(match[0]);
-      else throw new Error(t('ai_parse_fail'));
+      const match = result.match(/\{[\s\S]*\}/);
+      if (match) reportsObj = JSON.parse(match[0]);
+      else {
+        // Fallback: try parsing as array (single year)
+        const arrMatch = result.match(/\[[\s\S]*\]/);
+        if (arrMatch) { reportsObj = {}; reportsObj[yearNum] = JSON.parse(arrMatch[0]); }
+        else throw new Error(t('ai_parse_fail'));
+      }
     }
-    // Render report cards
+    // Normalize: if AI returned an array instead of object, wrap it
+    if (Array.isArray(reportsObj)) {
+      const tmp = {}; tmp[yearNum] = reportsObj; reportsObj = tmp;
+    }
+    // Render report cards with year sections
     cardsContainer.innerHTML = '';
-    reports.forEach(r => {
-      cardsContainer.innerHTML += `<div class="fm-report-card">
+    // Highlight timeline nodes that have results
+    document.querySelectorAll('.fm-year-node').forEach(n => n.classList.remove('has-result'));
+    cascadeYears.forEach(y => {
+      const reports = reportsObj[String(y)] || reportsObj[y];
+      if (!reports) return;
+      // Highlight the corresponding timeline node
+      document.querySelectorAll('.fm-year-node').forEach(n => {
+        const lbl = n.querySelector('.fm-year-label');
+        if (lbl && parseInt(lbl.textContent) === y) n.classList.add('has-result');
+      });
+      // Add year section header if multiple years
+      if (cascadeYears.length > 1) {
+        const isEn = getCurrentLang() === 'en';
+        const headerText = isEn ? `${y} Year${y > 1 ? 's' : ''} Later` : `${y} 年后`;
+        cardsContainer.innerHTML += `<div class="fm-year-section-header" style="grid-column:1/-1;">${headerText}</div>`;
+      }
+      reports.forEach(r => {
+        cardsContainer.innerHTML += `<div class="fm-report-card">
         <div class="fm-card-title">${r.title}</div>
         <div class="fm-card-text">${r.text}</div>
       </div>`;
+      });
     });
     showToast(t('toast_sim_done'));
     // Save to Firestore (non-blocking)
     const title = choices.slice(0, 20) || situation.slice(0, 20) || identity;
     db.collection('users').doc(currentUser.uid).collection('simulations').add({
-      identity, situation, choices, title, yearNum, reports,
+      identity, situation, choices, title, yearNum, cascadeYears, reports: reportsObj,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => loadUserData()).catch(e => console.warn('Save failed:', e));
   } catch(e) {
@@ -1563,16 +1705,38 @@ async function loadSimulation(docId) {
       if (d.yearNum) {
         document.querySelectorAll('.fm-year-node').forEach(n => {
           n.classList.remove('active');
+          n.classList.remove('has-result');
           if (n.querySelector('.fm-year-label').textContent.includes(d.yearNum)) n.classList.add('active');
         });
       }
       // Restore report cards
-      if (d.reports && d.reports.length) {
+      if (d.reports) {
         const cardsContainer = document.querySelector('.fm-report-cards');
         cardsContainer.innerHTML = '';
-        d.reports.forEach(r => {
-          cardsContainer.innerHTML += `<div class="fm-report-card"><div class="fm-card-title">${r.title}</div><div class="fm-card-text">${r.text}</div></div>`;
-        });
+        const cascade = d.cascadeYears || [d.yearNum || 1];
+        // Handle both old format (array) and new format (object with year keys)
+        if (Array.isArray(d.reports)) {
+          d.reports.forEach(r => {
+            cardsContainer.innerHTML += `<div class="fm-report-card"><div class="fm-card-title">${r.title}</div><div class="fm-card-text">${r.text}</div></div>`;
+          });
+        } else {
+          cascade.forEach(y => {
+            const reports = d.reports[String(y)] || d.reports[y];
+            if (!reports) return;
+            document.querySelectorAll('.fm-year-node').forEach(n => {
+              const lbl = n.querySelector('.fm-year-label');
+              if (lbl && parseInt(lbl.textContent) === y) n.classList.add('has-result');
+            });
+            if (cascade.length > 1) {
+              const isEn = getCurrentLang() === 'en';
+              const headerText = isEn ? `${y} Year${y > 1 ? 's' : ''} Later` : `${y} 年后`;
+              cardsContainer.innerHTML += `<div class="fm-year-section-header" style="grid-column:1/-1;">${headerText}</div>`;
+            }
+            reports.forEach(r => {
+              cardsContainer.innerHTML += `<div class="fm-report-card"><div class="fm-card-title">${r.title}</div><div class="fm-card-text">${r.text}</div></div>`;
+            });
+          });
+        }
       }
       showToast(t('toast_record_loaded'));
       document.getElementById('futureme').scrollIntoView({ behavior: 'smooth' });
